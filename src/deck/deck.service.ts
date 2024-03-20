@@ -1,26 +1,64 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { CreateDeckDto } from './dto/create-deck.dto';
 import { UpdateDeckDto } from './dto/update-deck.dto';
+import { Repository } from 'typeorm';
+import { Deck } from './entities/deck.entity';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class DeckService {
-  create(createDeckDto: CreateDeckDto) {
-    return 'This action adds a new deck';
+
+  constructor(
+    @InjectRepository(Deck)
+    private readonly deckRepository: Repository<Deck>
+  ) { }
+
+
+
+  async create(createDeckDto: CreateDeckDto) {
+
+    const newDeck = this.deckRepository.create(createDeckDto)
+    return await this.deckRepository.save(newDeck)
   }
 
-  findAll() {
-    return `This action returns all deck`;
+  async findAll() {
+    const decks = await this.deckRepository.find({
+      relations: {
+        cards: true
+      },
+      order: {
+        favorite: "DESC"
+      }
+    })
+    return decks;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} deck`;
+  async updateTitle(id: string, updateDeckDto: UpdateDeckDto) {
+    const deck = await this.deckRepository.preload({ id_deck: id, ...updateDeckDto })
+    if (!deck) {
+      throw new BadRequestException(`Deck with ID ${id} not found`);
+    }
+    console.log(deck)
+    return await this.deckRepository.save(deck)
   }
 
-  update(id: number, updateDeckDto: UpdateDeckDto) {
-    return `This action updates a #${id} deck`;
+  async favorite(id: string) {
+    const deck = await this.deckRepository.findOneBy({id_deck: id});
+
+    if (!deck) {
+      throw new BadRequestException(`Deck with ID ${id} not found`);
+    }
+
+    deck.favorite = !deck.favorite;
+
+    return await this.deckRepository.save(deck)
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} deck`;
+  async remove(id: string) {
+    const deck = await this.deckRepository.findOneBy({id_deck:id})
+    if (!deck) {
+      throw new BadRequestException(`Deck with ID ${id} not found`);
+    }  
+    return await this.deckRepository.remove(deck);
   }
 }

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseUUIDPipe } from '@nestjs/common';
 import { DeckService } from './deck.service';
 import { CreateDeckDto } from './dto/create-deck.dto';
 import { UpdateDeckDto } from './dto/update-deck.dto';
@@ -17,18 +17,19 @@ export class DeckController {
     return this.deckService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.deckService.findOne(+id);
-  }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateDeckDto: UpdateDeckDto) {
-    return this.deckService.update(+id, updateDeckDto);
+  updateTitle(@Param('id') id: string, @Body() updateDeckDto: UpdateDeckDto) {
+    return this.deckService.updateTitle(id, updateDeckDto);
+  }
+
+  @Patch('/favorite/:id')
+  favorite(@Param('id', ParseUUIDPipe) id: string) {
+    return this.deckService.favorite(id);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.deckService.remove(+id);
+  remove(@Param('id', ParseUUIDPipe) id: string) {
+    return this.deckService.remove(id);
   }
 }
